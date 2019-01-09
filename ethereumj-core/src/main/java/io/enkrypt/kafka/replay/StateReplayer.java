@@ -1,27 +1,26 @@
 package io.enkrypt.kafka.replay;
 
+import io.enkrypt.avro.capture.BlockRecord;
 import io.enkrypt.kafka.Kafka;
-import io.enkrypt.kafka.db.BlockSummaryStore;
+import io.enkrypt.kafka.db.BlockRecordStore;
+import io.enkrypt.kafka.listener.KafkaBlockSummaryPublisher;
 import org.ethereum.config.SystemProperties;
-import org.ethereum.core.AccountState;
-import org.ethereum.core.BlockSummary;
-import org.ethereum.core.TransactionExecutionSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.Map;
-import java.util.concurrent.Callable;
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 import static java.lang.Long.parseLong;
-import static org.ethereum.util.ByteUtil.longToBytes;
 
 public class StateReplayer {
 
   @Autowired
-  BlockSummaryStore store;
+  KafkaBlockSummaryPublisher blockListener;
+
+  @Autowired
+  BlockRecordStore store;
 
   @Autowired
   SystemProperties config;
@@ -39,37 +38,39 @@ public class StateReplayer {
 
   public void replay() {
 
-    BlockSummary blockSummary;
+    BlockRecord blockSummary;
     long number = parseLong(config.getProperty("replay.from", "0"));
 
     logger.info("Attempting to replay from number = {}", number);
 
-    do {
-      blockSummary = store.get(number);
+    try {
+      do {
 
-      if(blockSummary != null) {
+        blockSummary = store.get(number);
 
-        byte[] numberAsBytes = longToBytes(number);
+        if (blockSummary != null) {
 
-        kafka.send(Kafka.Producer.BLOCKS, numberAsBytes, blockSummary.getEncoded());
+          blockListener.onBlock(blockSummary);
 
-        for (TransactionExecutionSummary summary : blockSummary.getSummaries()) {
-          final Map<byte[], AccountState> touchedAccounts = summary.getTouchedAccounts();
-          for (Map.Entry<byte[], AccountState> entry : touchedAccounts.entrySet()) {
-            kafka.send(Kafka.Producer.ACCOUNT_STATE, entry.getKey(), entry.getValue().getEncoded());
+          if (number % 10000 == 0) {
+            logger.info("Replayed until number = {}", number);
           }
+
+          number++;
         }
 
-        if(number % 10000 == 0) {
-          logger.info("Replayed until number = {}", number);
-        }
+      } while (blockSummary != null);
 
-        number++;
-      }
+      logger.info("Replay complete, last number = {}", number - 1);
 
-    } while(blockSummary != null);
+      System.exit(0);
 
-    logger.info("Replay complete, last number = {}", number - 1);
+    } catch (IOException e) {
+      logger.error("Failure", e);
+      System.exit(1);
+    }
+
+
 
   }
 

@@ -38,7 +38,6 @@ public class BlockSummary {
   private final List<TransactionReceipt> receipts;
   private final List<TransactionExecutionSummary> summaries;
   private BigInteger totalDifficulty = BigInteger.ZERO;
-  private final BlockStatistics statistics;
 
   public BlockSummary(byte[] rlp) {
     RLPList rlpList = RLP.unwrapList(rlp);
@@ -55,16 +54,13 @@ public class BlockSummary {
 
       this.receipts.add(receipt);
     }
-
-    this.statistics = new BlockStatistics(rlpList.get(4).getRLPData());
   }
 
-  public BlockSummary(Block block, Map<byte[], BigInteger> rewards, List<TransactionReceipt> receipts, List<TransactionExecutionSummary> summaries, BlockStatistics statistics) {
+  public BlockSummary(Block block, Map<byte[], BigInteger> rewards, List<TransactionReceipt> receipts, List<TransactionExecutionSummary> summaries) {
     this.block = block;
     this.rewards = rewards;
     this.receipts = receipts;
     this.summaries = summaries;
-    this.statistics = statistics;
   }
 
   public Block getBlock() {
@@ -77,10 +73,6 @@ public class BlockSummary {
 
   public List<TransactionExecutionSummary> getSummaries() {
     return summaries;
-  }
-
-  public BlockStatistics getStatistics() {
-    return statistics;
   }
 
   /**
@@ -103,15 +95,13 @@ public class BlockSummary {
       block.getEncoded(),
       encodeRewards(rewards),
       encodeSummaries(summaries),
-      encodeReceipts(receipts),
-      statistics.getEncoded()
+      encodeReceipts(receipts)
     );
   }
 
   /**
    * Whether this block could be new best block
    * for the chain with provided old total difficulty
-   *
    * @param oldTotDifficulty Total difficulty for the suggested chain
    * @return True - best, False - not best
    */
@@ -150,9 +140,8 @@ public class BlockSummary {
   private static <K, V> Map<K, V> decodeMap(RLPList list, Function<byte[], K> keyDecoder, Function<byte[], V> valueDecoder) {
     Map<K, V> result = new HashMap<>();
     for (RLPElement entry : list) {
-      RLPList elements = RLP.unwrapList(entry.getRLPData());
-      K key = keyDecoder.apply(elements.get(0).getRLPData());
-      V value = valueDecoder.apply(elements.get(1).getRLPData());
+      K key = keyDecoder.apply(((RLPList) entry).get(0).getRLPData());
+      V value = valueDecoder.apply(((RLPList) entry).get(1).getRLPData());
       result.put(key, value);
     }
     return result;

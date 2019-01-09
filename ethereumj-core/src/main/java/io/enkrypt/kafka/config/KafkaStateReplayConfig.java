@@ -1,28 +1,28 @@
 package io.enkrypt.kafka.config;
 
+import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 import io.enkrypt.kafka.Kafka;
 import io.enkrypt.kafka.KafkaImpl;
 import io.enkrypt.kafka.NullKafka;
-import io.enkrypt.kafka.db.BlockSummaryStore;
+import io.enkrypt.kafka.db.BlockRecordStore;
+import io.enkrypt.kafka.listener.KafkaBlockSummaryPublisher;
+import io.enkrypt.kafka.listener.KafkaPendingTxsListener;
+import io.enkrypt.kafka.mapping.ObjectMapper;
 import io.enkrypt.kafka.replay.StateReplayer;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.ethereum.config.CommonConfig;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.datasource.DbSettings;
 import org.ethereum.datasource.DbSource;
 import org.ethereum.datasource.rocksdb.RocksDbDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 public class KafkaStateReplayConfig {
@@ -52,19 +52,40 @@ public class KafkaStateReplayConfig {
   }
 
   @Bean
-  public BlockSummaryStore blockSummaryStore() {
-    return new BlockSummaryStore(dbSource("block-summaries", DbSettings.DEFAULT));
+  public BlockRecordStore blockSummaryStore() {
+    return new BlockRecordStore(dbSource("block-summaries", DbSettings.DEFAULT));
   }
 
   @Bean
   public ExecutorService executorService() {
-    return Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      executor.shutdown();
+
+      try {
+        executor.awaitTermination(60, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        logger.warn("shutdown: executor interrupted: {}", e.getMessage());
+      }
+
+    }));
+
+    return executor;
+  }
+
+  @Bean
+  public ObjectMapper objectMapper() {
+    return new ObjectMapper();
   }
 
   @Bean
   public Kafka kafka(SystemProperties config) {
-    final boolean enabled = ((KafkaSystemProperties) config).isKafkaEnabled();
-    final String bootstrapServers = ((KafkaSystemProperties) config).getKafkaBootstrapServers();
+
+    final KafkaSystemProperties kafkaConfig = (KafkaSystemProperties) config;
+
+    final boolean enabled = kafkaConfig.isKafkaEnabled();
+    final String bootstrapServers = kafkaConfig.getKafkaBootstrapServers();
 
     if (!enabled) {
       return new NullKafka();
@@ -74,12 +95,30 @@ public class KafkaStateReplayConfig {
     props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
     props.put(ProducerConfig.CLIENT_ID_CONFIG, "ethereumj-state-replayer");
 
-    // we use byte array serialization as we are using rlp where required
-    props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
-    props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
+    props.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, kafkaConfig.getKafkaSchemaRegistryUrl());
 
     props.put(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, 2000000000);
 
-    return new KafkaImpl(new KafkaProducer<>(props));
+    return new KafkaImpl(props);
+  }
+
+  @Bean
+  public KafkaPendingTxsListener kafkaPendingTxsListener(Kafka kafka, ObjectMapper objectMapper) {
+    return new KafkaPendingTxsListener(kafka, objectMapper);
+  }
+
+  @Bean
+  public KafkaBlockSummaryPublisher kafkaBlockListener(Kafka kafka,
+                                                       ExecutorService executor) {
+
+    final KafkaBlockSummaryPublisher blockListener = new KafkaBlockSummaryPublisher(kafka);
+
+    // run the block listener with it's own thread and handle shutdown
+
+    executor.submit(blockListener);
+
+    Runtime.getRuntime().addShutdownHook(new Thread(blockListener::stop));
+
+    return blockListener;
   }
 }

@@ -17,8 +17,6 @@
  */
 package org.ethereum.core;
 
-import java.util.*;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.CommonConfig;
@@ -38,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.util.List;
 
 import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.ArrayUtils.getLength;
@@ -255,7 +254,7 @@ public class TransactionExecutor {
                 result.spendGas(basicTxCost);
             } else {
                 ProgramInvoke programInvoke =
-                        programInvokeFactory.createProgramInvoke(tx, currentBlock, cacheTrack, blockStore);
+                        programInvokeFactory.createProgramInvoke(tx, currentBlock, cacheTrack, track, blockStore);
 
                 this.vm = new VM(config, vmHook);
                 this.program = new Program(track.getCodeHash(targetAddress), code, programInvoke, tx, config, vmHook).withCommonConfig(commonConfig);
@@ -290,18 +289,24 @@ public class TransactionExecutor {
             m_endGas = m_endGas.subtract(BigInteger.valueOf(basicTxCost));
             result.spendGas(basicTxCost);
         } else {
-            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, currentBlock, cacheTrack, blockStore);
+            Repository originalRepo = track;
+            // Some TCK tests have storage only addresses (no code, zero nonce etc) - impossible situation in the real network
+            // So, we should clean up it before reuse, but as tx not always goes successful, state should be correctly
+            // reverted in that case too
+            if (cacheTrack.hasContractDetails(newContractAddress)) {
+                originalRepo = track.clone();
+                originalRepo.delete(newContractAddress);
+            }
+            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, currentBlock,
+                    cacheTrack, originalRepo, blockStore);
 
             this.vm = new VM(config, vmHook);
             this.program = new Program(tx.getData(), programInvoke, tx, config, vmHook).withCommonConfig(commonConfig);
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
-            // TODO make via Trie.clear() without keyset
-//            ContractDetails contractDetails = program.getStorage().getContractDetails(newContractAddress);
-//            for (DataWord key : contractDetails.getStorageKeys()) {
-//                program.storageSave(key, DataWord.ZERO);
-//            }
+            ContractDetails contractDetails = program.getStorage().getContractDetails(newContractAddress);
+            contractDetails.deleteStorage();
         }
 
         BigInteger endowment = toBI(tx.getValue());
@@ -421,26 +426,16 @@ public class TransactionExecutor {
             ContractDetails contractDetails = track.getContractDetails(addr);
             if (contractDetails != null) {
                 // TODO
-                //summaryBuilder.storageDiff(track.getContractDetails(addr).getStorage());
-                //if (program != null) {
-                //    summaryBuilder.touchedStorage(contractDetails.getStorage(), program.getStorageDiff());
-                //}
+//                summaryBuilder.storageDiff(track.getContractDetails(addr).getStorage());
+//
+//                if (program != null) {
+//                    summaryBuilder.touchedStorage(contractDetails.getStorage(), program.getStorageDiff());
+//                }
             }
 
             if (result.getException() != null) {
                 summaryBuilder.markAsFailed();
             }
-        }
-
-        // Grab what accounts have suffered modifications
-        if (result != null) {
-            Set<byte[]> rawTouchedAccounts = touchedAccounts;
-            Map<byte[], AccountState> touched = new HashMap<>(rawTouchedAccounts.size());
-            for (byte[] address : rawTouchedAccounts) {
-                final AccountState state = track.getAccountState(address);
-                touched.put(address, state);
-            }
-            summaryBuilder.touchedAccounts(touched);
         }
 
         TransactionExecutionSummary summary = summaryBuilder.build();
@@ -470,6 +465,7 @@ public class TransactionExecutor {
                 }
             }
         }
+
 
         listener.onTransactionExecuted(summary);
 

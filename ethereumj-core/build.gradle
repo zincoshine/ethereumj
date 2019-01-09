@@ -134,10 +134,9 @@ dependencies {
 
     compile "com.google.guava:guava:24.1-jre"
 
-    compile "org.apache.kafka:kafka-streams:2.0.0"
-
-    compile "com.github.jcustenborder.kafka:kafka-jackson:0.0.1.2"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.5"
+    compile "org.apache.kafka:kafka-clients:2.0.0"
+    compile "io.confluent:kafka-streams-avro-serde:5.0.1"
+    compile "io.enkrypt.ethvm:avro-entities:0.1.1"
 
     compile "com.cedarsoftware:java-util:1.8.0" // for deep equals
     compile "org.slf4j:slf4j-api:${slf4jVersion}"
@@ -233,12 +232,7 @@ artifactory {
 }
 
 artifactoryPublish.onlyIf {
-    (branchName != null) &&
-            (!pullRequest || pullRequest == 'false') &&
-            project.version.endsWith('-SNAPSHOT') &&
-            (branchName.startsWith('master') ||
-                    branchName.startsWith('develop') ||
-                    branchName.startsWith('stage'))
+    (branchName != null) && (!pullRequest || pullRequest == 'false') && project.version.endsWith('-SNAPSHOT')
 }
 
 bintray {
@@ -252,7 +246,7 @@ bintray {
     pkg {
         userOrg = 'enkryptio' //An optional organization name when the repo belongs to one of the user's orgs
         repo = 'maven'
-        name = 'org.ethereum'
+        name = 'io.enkrypt'
     }
 }
 

@@ -1,29 +1,18 @@
 package io.enkrypt.kafka;
 
-import java.util.concurrent.Future;
-import org.apache.kafka.clients.producer.RecordMetadata;
+import io.enkrypt.avro.capture.BlockKeyRecord;
+import io.enkrypt.avro.capture.BlockRecord;
+import io.enkrypt.avro.capture.TransactionKeyRecord;
+import io.enkrypt.avro.capture.TransactionRecord;
+import org.apache.kafka.clients.producer.KafkaProducer;
 
 public interface Kafka {
 
-  enum Producer {
+  String TOPIC_BLOCKS = "blocks";
+  String TOPIC_PENDING_TRANSACTIONS = "pending-transactions";
 
-    METADATA("metadata"),
-    BLOCKS("blocks"),
-    TRANSACTIONS("transactions"),
-    PENDING_TRANSACTIONS("pending-transactions"),
-    ACCOUNT_STATE("account-state"),
-    TEST("test");
+  KafkaProducer<TransactionKeyRecord, TransactionRecord> getPendingTransactionsProducer();
 
-    public String topic;
+  KafkaProducer<BlockKeyRecord, BlockRecord> getBlockProducer();
 
-    Producer(String topic) {
-      this.topic = topic;
-    }
-  }
-
-  <K, V> Future<RecordMetadata> send(Kafka.Producer producer, K key, V value);
-
-  <K, V> Future<RecordMetadata> send(Kafka.Producer producer, int partition, K key, V value);
-
-  <K, V> void sendSync(Kafka.Producer producer, K key, V value);
 }
