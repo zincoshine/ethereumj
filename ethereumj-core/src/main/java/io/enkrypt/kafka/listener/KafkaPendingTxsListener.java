@@ -2,6 +2,7 @@ package io.enkrypt.kafka.listener;
 
 import io.enkrypt.avro.capture.TransactionKeyRecord;
 import io.enkrypt.avro.capture.TransactionRecord;
+import io.enkrypt.avro.common.Data32;
 import io.enkrypt.kafka.Kafka;
 import io.enkrypt.kafka.mapping.ObjectMapper;
 import org.apache.kafka.clients.producer.Producer;
@@ -40,7 +41,7 @@ public class KafkaPendingTxsListener implements EthereumListener {
     final byte[] txHash = txReceipt.getTransaction().getHash();
 
     final TransactionKeyRecord key = TransactionKeyRecord.newBuilder()
-      .setHash(ByteBuffer.wrap(txHash))
+      .setTxHash(new Data32(txHash))
       .build();
 
     try {
