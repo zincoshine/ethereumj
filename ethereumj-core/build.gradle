@@ -246,15 +246,15 @@ bintray {
     pkg {
         userOrg = 'enkryptio' //An optional organization name when the repo belongs to one of the user's orgs
         repo = 'maven'
-        name = 'io.enkrypt'
+        name = 'io.enkrypt.ethvm.ethereumj'
     }
 }
 
-bintrayUpload.onlyIf {
-    // comment 'false' and uncomment the next line to publish next release
-    (!pullRequest || pullRequest == 'false') && !project.version.endsWith('-SNAPSHOT')
-//     false
-}
+//bintrayUpload.onlyIf {
+//    // comment 'false' and uncomment the next line to publish next release
+//    (!pullRequest || pullRequest == 'false') && !project.version.endsWith('-SNAPSHOT')
+////     false
+//}
 
 install {
     repositories.mavenInstaller {
@@ -273,7 +273,7 @@ task publish {
 
     println "publishing if master || develop current branch: " + branchName
     description = "Publishes snapshots to oss.jfrog.org and releases to Bintray/JCenter"
-    dependsOn artifactoryPublish, bintrayUpload
+    dependsOn bintrayUpload
 }
 
 
