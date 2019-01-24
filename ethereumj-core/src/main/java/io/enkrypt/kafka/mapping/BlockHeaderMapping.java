@@ -6,11 +6,13 @@ import io.enkrypt.avro.common.Data256;
 import io.enkrypt.avro.common.Data32;
 import io.enkrypt.avro.common.Data8;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.ByteBuffer.wrap;
+import static org.ethereum.util.ByteUtil.bigIntegerToByteBuffer;
 
 public class BlockHeaderMapping implements ObjectMapping {
 
@@ -23,7 +25,7 @@ public class BlockHeaderMapping implements ObjectMapping {
     final BlockHeader h = (BlockHeader) value;
 
     final BlockHeaderRecord.Builder builder = BlockHeaderRecord.newBuilder()
-      .setNumber(wrap(BigInteger.valueOf(h.getNumber()).toByteArray()))
+      .setNumber(bigIntegerToByteBuffer(h.getNumber()))
       .setHash(new Data32(h.getHash().clone()))
       .setParentHash(new Data32(h.getParentHash().clone()))
       .setNonce(new Data8(h.getNonce().clone()))
@@ -35,7 +37,7 @@ public class BlockHeaderMapping implements ObjectMapping {
       .setAuthor(new Data20(h.getCoinbase().clone()))
       .setDifficulty(wrap(h.getDifficulty().clone()))
       .setGasLimit(wrap(h.getGasLimit().clone()))
-      .setGasUsed(wrap(BigInteger.valueOf(h.getGasUsed()).toByteArray()))
+      .setGasUsed(bigIntegerToByteBuffer(h.getGasUsed()))
       .setTimestamp(h.getTimestamp())
       .setRaw(wrap(h.getEncoded().clone()));
 

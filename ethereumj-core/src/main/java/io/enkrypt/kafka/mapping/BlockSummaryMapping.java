@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.ByteBuffer.wrap;
+import static org.ethereum.util.ByteUtil.bigIntegerToByteBuffer;
 import static org.ethereum.util.ByteUtil.bigIntegerToBytes;
 
 public class BlockSummaryMapping implements ObjectMapping {
@@ -34,7 +35,7 @@ public class BlockSummaryMapping implements ObjectMapping {
 
     final BlockRecord.Builder builder = BlockRecord.newBuilder()
       .setHeader(mappers.convert(ctx, BlockHeader.class, BlockHeaderRecord.class, b.getHeader()))
-      .setTotalDifficulty(wrap(b.getCumulativeDifficulty().toByteArray()))
+      .setTotalDifficulty(bigIntegerToByteBuffer(b.getCumulativeDifficulty()))
       .setUnclesHash(new Data32(b.getUnclesHash().clone()))
       .setRaw(wrap(b.getEncoded().clone()));
 

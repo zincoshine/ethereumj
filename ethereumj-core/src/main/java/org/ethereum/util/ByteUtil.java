@@ -105,7 +105,16 @@ public class ByteUtil {
         return data;
     }
 
-    /**
+    public static ByteBuffer bigIntegerToByteBuffer(BigInteger b) {
+      return ByteBuffer.wrap(bigIntegerToBytes(b));
+    }
+
+  public static ByteBuffer bigIntegerToByteBuffer(long b) {
+    return ByteBuffer.wrap(bigIntegerToBytes(BigInteger.valueOf(b)));
+  }
+
+
+  /**
      * Cast hex encoded value from byte[] to BigInteger
      * null is parsed like byte[0]
      *
