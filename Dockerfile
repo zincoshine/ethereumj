@@ -20,6 +20,7 @@ COPY . /tmp/ethereumj
 RUN wget -O /dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64
 
 # Build Ethereumj
+RUN /tmp/ethereumj/gradlew --no-daemon clean
 RUN /tmp/ethereumj/gradlew --no-daemon assemble -PmainClass=${ETHEREUMJ_MAIN_CLASS}
 
 FROM openjdk:8u181-jre-slim
@@ -29,7 +30,7 @@ ARG DEFAULT_JVM_ARGS='-server -Xss8m -Xmx2G -XX:+UnlockExperimentalVMOptions -XX
 ENV JAVA_OPTS=${DEFAULT_JVM_ARGS}
 
 # Copy to new image
-COPY --from=builder /tmp/ethereumj/ethereumj-core/build/distributions/ethereumj-core-*-RELEASE.tar /
+COPY --from=builder /tmp/ethereumj/ethereumj-core/build/distributions/*.tar /
 COPY --from=builder /dumb-init /usr/bin/dumb-init
 
 # Prepare binaries
