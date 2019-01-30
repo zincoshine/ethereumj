@@ -24,7 +24,7 @@ RUN /tmp/ethereumj/gradlew --no-daemon assemble -PmainClass=${ETHEREUMJ_MAIN_CLA
 
 FROM openjdk:8u181-jre-slim
 
-ARG DEFAULT_JVM_ARGS='-server -Xss2m -Xmx2G -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:+UseG1GC -XX:-OmitStackTraceInFastThrow'
+ARG DEFAULT_JVM_ARGS='-server -Xss8m -Xmx2G -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:+UseG1GC -XX:-OmitStackTraceInFastThrow'
 
 ENV JAVA_OPTS=${DEFAULT_JVM_ARGS}
 
