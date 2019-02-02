@@ -6,6 +6,6 @@ import io.enkrypt.kafka.config.KafkaEthereumConfig;
 public class EthereumKafkaStarter {
 
   public static void main(String args[]) {
-    EthereumFactory.createEthereum(KafkaEthereumConfig.class);
+    EthereumFactory.createEthereum(KafkaEthereumConfig.class).exitOn(130000);
   }
 }
