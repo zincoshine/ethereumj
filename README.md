@@ -1,7 +1,6 @@
 <div align="center">
   <img src="https://raw.githubusercontent.com/enKryptIO/ethvm/master/.github/assets/logo.png" alt="ethvm-logo">
   <p>:zap::zap::zap: EthVM Project: An open source blockchain explorer for Ethereum network :zap::zap::zap:</p>
-  <p>Powered by <a href="https://www.typescriptlang.org/">TypeScript</a> / <a href="https://vuejs.org/">VueJS</a> / <a href="https://github.com/socketio/socket.io">Socket.io</a> / <a href="https://github.com/ethereum/ethereumj">EthereumJ</a> / <a href="https://kafka.apache.org/">Kafka</a> / <a href="https://github.com/mongodb/mongo">MongoDB</a> / <a href="https://redis.io/topics/quickstart">Redis</a></p>
 </div>
 
 ## EthVM: EthereumJ
@@ -14,8 +13,8 @@ Main differences to the original client are:
 - It tweaks some parts of the code to fetch more blocks while syncing.
 - More soon...
 
-If you're searching for proper instructions on how to compile and use this client, then the better is to go to the [official documentation](https://github.com/enKryptIO/ethereumj).
+If you're searching for proper instructions on how to compile and use this client, then the better option is to visit the [official documentation](https://github.com/enKryptIO/ethereumj).
 
 ## License
 
-The ethereumj is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html).
+Ethereumj is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html).
