@@ -39,6 +39,11 @@ public class KafkaImpl implements Kafka {
   }
 
   @Override
+  public boolean isEnabled() {
+    return true;
+  }
+
+  @Override
   public KafkaProducer<TransactionKeyRecord, TransactionRecord> getPendingTransactionsProducer() {
     return txProducer;
   }

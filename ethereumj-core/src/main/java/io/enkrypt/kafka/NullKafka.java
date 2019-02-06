@@ -9,6 +9,11 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 public class NullKafka implements Kafka {
 
   @Override
+  public boolean isEnabled() {
+    return false;
+  }
+
+  @Override
   public KafkaProducer<TransactionKeyRecord, TransactionRecord> getPendingTransactionsProducer() {
     return null;
   }

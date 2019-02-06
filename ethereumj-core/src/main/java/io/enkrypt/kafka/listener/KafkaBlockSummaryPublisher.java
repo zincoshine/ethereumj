@@ -92,6 +92,8 @@ public class KafkaBlockSummaryPublisher implements Runnable {
 
   private void publishBatch(List<BlockRecord> batch) {
 
+    if(!kafka.isEnabled()) return;
+
     final KafkaProducer<BlockKeyRecord, BlockRecord> producer = kafka.getBlockProducer();
 
     producer.beginTransaction();

@@ -11,6 +11,8 @@ public interface Kafka {
   String TOPIC_BLOCKS = "blocks";
   String TOPIC_PENDING_TRANSACTIONS = "pending-transactions";
 
+  boolean isEnabled();
+
   KafkaProducer<TransactionKeyRecord, TransactionRecord> getPendingTransactionsProducer();
 
   KafkaProducer<BlockKeyRecord, BlockRecord> getBlockProducer();

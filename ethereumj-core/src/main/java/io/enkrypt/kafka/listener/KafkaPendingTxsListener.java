@@ -25,7 +25,10 @@ public class KafkaPendingTxsListener implements EthereumListener {
 
   private final AtomicInteger numPendingTxs = new AtomicInteger(0);
 
+  private final Kafka kafka;
+
   public KafkaPendingTxsListener(Kafka kafka, ObjectMapper objectMapper) {
+    this.kafka = kafka;
     this.producer = kafka.getPendingTransactionsProducer();
     this.objectMapper = objectMapper;
   }
@@ -36,6 +39,8 @@ public class KafkaPendingTxsListener implements EthereumListener {
 
   @Override
   public void onPendingTransactionUpdate(final TransactionReceipt txReceipt, final PendingTransactionState state, final Block block) {
+
+    if(!kafka.isEnabled()) return;
 
     final byte[] txHash = txReceipt.getTransaction().getHash();
 
