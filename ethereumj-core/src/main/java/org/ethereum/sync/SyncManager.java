@@ -111,8 +111,6 @@ public class SyncManager extends BlockDownloader {
 
     ChannelManager channelManager;
 
-    private SystemProperties config;
-
     private SyncPool pool;
 
     private SyncQueueImpl syncQueue;
