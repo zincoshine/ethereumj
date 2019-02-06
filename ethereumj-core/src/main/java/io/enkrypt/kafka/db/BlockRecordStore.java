@@ -2,6 +2,7 @@ package io.enkrypt.kafka.db;
 
 import io.enkrypt.avro.capture.BlockRecord;
 import org.ethereum.datasource.DbSource;
+import org.ethereum.datasource.rocksdb.RocksDbDataSource;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -14,6 +15,14 @@ public class BlockRecordStore {
 
   public BlockRecordStore(DbSource ds) {
     this.ds = ds;
+  }
+
+  public void flush() {
+    ds.flush();
+  }
+
+  public void backup(){
+    ((RocksDbDataSource) ds).backup();
   }
 
   public void put(long number, BlockRecord summary) throws IOException {

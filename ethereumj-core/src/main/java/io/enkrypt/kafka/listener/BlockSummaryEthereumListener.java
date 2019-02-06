@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static java.nio.ByteBuffer.wrap;
 
@@ -30,6 +31,9 @@ public class BlockSummaryEthereumListener implements EthereumListener {
   private final KafkaPendingTxsListener pendingTxsListener;
   private final ObjectMapper objectMapper;
 
+  private long lastBackupAtMs;
+  private long backupPeriodMs = TimeUnit.MINUTES.toMillis(1);
+
   public BlockSummaryEthereumListener(SystemProperties config,
                                       BlockRecordStore blockRecordStore,
                                       KafkaBlockSummaryPublisher kafkaBlockSummaryPublisher,
@@ -40,6 +44,8 @@ public class BlockSummaryEthereumListener implements EthereumListener {
     this.kafkaBlockSummaryPublisher = kafkaBlockSummaryPublisher;
     this.pendingTxsListener = pendingTxsListener;
     this.objectMapper = objectMapper;
+
+    this.lastBackupAtMs = System.currentTimeMillis();
   }
 
   @Override
@@ -102,6 +108,15 @@ public class BlockSummaryEthereumListener implements EthereumListener {
 
   @Override
   public void onBlock(BlockSummary blockSummary) {
+
+    final long now = System.currentTimeMillis();
+    if(now - lastBackupAtMs > backupPeriodMs) {
+
+      blockRecordStore.flush();
+      blockRecordStore.backup();
+
+      lastBackupAtMs = now;
+    }
 
     final Block block = blockSummary.getBlock();
     final long number = block.getNumber();
