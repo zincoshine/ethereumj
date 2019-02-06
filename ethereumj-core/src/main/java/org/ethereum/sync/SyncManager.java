@@ -20,6 +20,9 @@ package org.ethereum.sync;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.core.Blockchain;
+import org.ethereum.datasource.DbSource;
+import org.ethereum.datasource.rocksdb.RocksDbDataSource;
+import org.ethereum.db.DbFlushManager;
 import org.ethereum.facade.SyncStatus;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
@@ -31,6 +34,7 @@ import org.ethereum.validator.DependentBlockHeaderRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
@@ -93,7 +97,17 @@ public class SyncManager extends BlockDownloader {
     private FastSyncManager fastSyncManager;
 
     @Autowired
+    @Qualifier("blockchainDB")
+    DbSource<byte[]> blockchainDB;
+
+    @Autowired
+    DbFlushManager dbFlushManager;
+
+    @Autowired
     private DependentBlockHeaderRule parentHeaderValidator;
+
+    @Autowired
+    private SystemProperties config;
 
     ChannelManager channelManager;
 
@@ -267,10 +281,15 @@ public class SyncManager extends BlockDownloader {
         DecimalFormat timeFormat = new DecimalFormat("0.000");
         timeFormat.setDecimalFormatSymbols(DecimalFormatSymbols.getInstance(Locale.US));
 
+        long lastBackupAtMs = System.currentTimeMillis();
+        final long backupPeriodMs = TimeUnit.MINUTES.toMillis(15);
+
         while (!Thread.currentThread().isInterrupted()) {
 
             BlockWrapper wrapper = null;
             try {
+
+                lastBackupAtMs = tryBackup(lastBackupAtMs, backupPeriodMs);
 
                 long stale = !isSyncDone() && importStart > 0 && blockQueue.isEmpty() ? System.nanoTime() : 0;
                 wrapper = blockQueue.take();
@@ -338,6 +357,21 @@ public class SyncManager extends BlockDownloader {
                 }
             }
         }
+    }
+
+    private long tryBackup(long lastBackupAtMs, long periodMs) {
+
+      final long now = System.currentTimeMillis();
+      if(now - lastBackupAtMs < periodMs) {
+        return lastBackupAtMs;
+      }
+
+      if (blockchainDB instanceof RocksDbDataSource) {
+        dbFlushManager.flushSync();
+        ((RocksDbDataSource) blockchainDB).backup();
+      }
+
+      return now;
     }
 
     private synchronized void makeSyncDone() {
