@@ -37,7 +37,7 @@ public class BlockSummaryMapping implements ObjectMapping {
       .setHeader(mappers.convert(ctx, BlockHeader.class, BlockHeaderRecord.class, b.getHeader()))
       .setTotalDifficulty(bigIntegerToByteBuffer(b.getCumulativeDifficulty()))
       .setUnclesHash(new Data32(b.getUnclesHash().clone()))
-      .setRaw(wrap(b.getEncoded().clone()));
+      .setRaw(wrap(ByteUtil.gzipBytes(b.getEncoded().clone())));
 
     builder.setUncles(
       b.getUncleList()

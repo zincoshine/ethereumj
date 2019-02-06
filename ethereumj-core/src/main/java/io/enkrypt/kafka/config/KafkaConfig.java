@@ -50,11 +50,7 @@ public class KafkaConfig {
 
     final Properties props = new Properties();
     props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConfig.getKafkaBootstrapServers());
-
     props.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, kafkaConfig.getKafkaSchemaRegistryUrl());
-
-    // we use byte array serialization as we are using rlp where required
-    props.put(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, 2000000000);
 
     return new KafkaImpl(props);
   }

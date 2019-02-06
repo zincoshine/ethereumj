@@ -7,11 +7,13 @@ import io.enkrypt.avro.common.Data20;
 import io.enkrypt.avro.common.Data32;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 
 import java.nio.ByteBuffer;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.ByteBuffer.wrap;
+import static org.ethereum.util.ByteUtil.gzipBytes;
 
 public class TransactionMapping implements ObjectMapping {
 
@@ -43,11 +45,10 @@ public class TransactionMapping implements ObjectMapping {
       .setV(new Data1(new byte[]{ signature.v }))
       .setR(wrap(signature.r.toByteArray()))
       .setS(wrap(signature.s.toByteArray()))
-      .setChainId(tx.getChainId())
-      .setRaw(wrap(tx.getEncodedRaw().clone()));
+      .setChainId(tx.getChainId());
 
     if(tx.getReceiveAddress() != null && tx.getReceiveAddress().length == 20) builder.setTo(new Data20(tx.getReceiveAddress().clone()));
-    if(tx.getData() != null) builder.setInput(wrap(tx.getData().clone()));
+    if(tx.getData() != null) builder.setInput(wrap(gzipBytes(tx.getData())));
     if(tx.getContractAddress() != null) builder.setCreates(new Data20(tx.getContractAddress().clone()));
 
     return to.cast(builder.build());

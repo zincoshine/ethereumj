@@ -38,7 +38,6 @@ public class TransactionReceiptMapping implements ObjectMapping {
       .setCumulativeGasUsed(wrap(r.getCumulativeGas().clone()))
       .setGasUsed(wrap(r.getGasUsed().clone()))
       .setLogsBloom(new Data256(r.getBloomFilter().getData().clone()))
-      .setRaw(wrap(r.getEncoded().clone()))
       .setError(r.getError());
 
     if(tx.getContractAddress() != null) builder.setContractAddress(new Data20(tx.getContractAddress().clone()));

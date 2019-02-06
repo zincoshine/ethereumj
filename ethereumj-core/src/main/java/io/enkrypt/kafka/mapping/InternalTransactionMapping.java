@@ -3,10 +3,12 @@ package io.enkrypt.kafka.mapping;
 import io.enkrypt.avro.capture.InternalTransactionRecord;
 import io.enkrypt.avro.common.Data20;
 import io.enkrypt.avro.common.Data32;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.InternalTransaction;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.ByteBuffer.wrap;
+import static org.ethereum.util.ByteUtil.gzipBytes;
 
 public class InternalTransactionMapping implements ObjectMapping {
 
@@ -34,11 +36,10 @@ public class InternalTransactionMapping implements ObjectMapping {
       .setValue(wrap(internalTx.getValue().clone()))
       .setGasPrice(wrap(internalTx.getGasPrice().clone()))
       .setGas(wrap(internalTx.getGasLimit().clone()))
-      .setChainId(internalTx.getChainId())
-      .setRaw(wrap(internalTx.getEncodedRaw().clone()));
+      .setChainId(internalTx.getChainId());
 
     if(internalTx.getReceiveAddress() != null && internalTx.getReceiveAddress().length == 20) builder.setTo(new Data20(internalTx.getReceiveAddress().clone()));
-    if(internalTx.getData() != null) builder.setInput(wrap(internalTx.getData().clone()));
+    if(internalTx.getData() != null) builder.setInput(wrap(gzipBytes(internalTx.getData())));
     if(internalTx.getContractAddress() != null) builder.setCreates(new Data20(internalTx.getContractAddress().clone()));
 
     return to.cast(builder.build());

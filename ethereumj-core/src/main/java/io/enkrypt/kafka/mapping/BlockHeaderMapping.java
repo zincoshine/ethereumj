@@ -38,8 +38,7 @@ public class BlockHeaderMapping implements ObjectMapping {
       .setDifficulty(wrap(h.getDifficulty().clone()))
       .setGasLimit(wrap(h.getGasLimit().clone()))
       .setGasUsed(bigIntegerToByteBuffer(h.getGasUsed()))
-      .setTimestamp(h.getTimestamp())
-      .setRaw(wrap(h.getEncoded().clone()));
+      .setTimestamp(h.getTimestamp());
 
     if(h.getExtraData() != null) builder.setExtraData(wrap(h.getExtraData().clone()));
 

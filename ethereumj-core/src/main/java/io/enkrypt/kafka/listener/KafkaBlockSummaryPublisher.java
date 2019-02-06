@@ -2,14 +2,22 @@ package io.enkrypt.kafka.listener;
 
 import io.enkrypt.avro.capture.BlockKeyRecord;
 import io.enkrypt.avro.capture.BlockRecord;
+import io.enkrypt.avro.capture.TransactionReceiptRecord;
 import io.enkrypt.kafka.Kafka;
+import org.apache.avro.generic.GenericDatumWriter;
+import org.apache.avro.io.BinaryEncoder;
+import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.io.JsonEncoder;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.errors.ProducerFencedException;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Base64;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +36,7 @@ public class KafkaBlockSummaryPublisher implements Runnable {
   private final ConcurrentLinkedQueue<BlockRecord> queue;
   private final ArrayList<BlockRecord> batch;
 
-  private final int batchSize = 512;
+  private final int batchSize = 32;
 
   private volatile boolean running = true;
 
@@ -100,6 +108,9 @@ public class KafkaBlockSummaryPublisher implements Runnable {
           .setNumber(number)
           .build();
 
+        if(record.toByteBuffer().capacity() > 1024 * 1024) {
+          logger.info("Big record");
+        }
         // publish block summary
 
         futures.add(producer.send(new ProducerRecord<>(Kafka.TOPIC_BLOCKS, key, record)));
