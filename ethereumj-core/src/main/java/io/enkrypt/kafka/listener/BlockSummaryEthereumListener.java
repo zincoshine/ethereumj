@@ -35,7 +35,7 @@ public class BlockSummaryEthereumListener implements EthereumListener {
   private final Kafka kafka;
 
   private long lastBackupAtMs;
-  private long backupPeriodMs = TimeUnit.MINUTES.toMillis(15);
+  private long backupPeriodMs = TimeUnit.MINUTES.toMillis(10);
 
   public BlockSummaryEthereumListener(SystemProperties config,
                                       Kafka kafka,

@@ -196,7 +196,7 @@ public class RocksDbDataSource implements DbSource<byte[]> {
     }
 
     private Path backupPath() {
-        return Paths.get(config.databaseDir(), "backup", name);
+        return Paths.get(config.backupDir(), name);
     }
 
     @Override

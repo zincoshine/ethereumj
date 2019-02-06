@@ -139,6 +139,7 @@ public class SystemProperties {
 
     // mutable options for tests
     private String databaseDir = null;
+    private String backupDir = null;
     private Boolean databaseReset = null;
     private String projectVersion = null;
     private String projectVersionModifier = null;
@@ -589,6 +590,10 @@ public class SystemProperties {
     @ValidateMe
     public String databaseDir() {
         return databaseDir == null ? config.getString("database.dir") : databaseDir;
+    }
+
+    public String backupDir() {
+      return backupDir == null ? config.getString("database.backupDir") : backupDir;
     }
 
     public String ethashDir() {
