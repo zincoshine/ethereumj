@@ -3,6 +3,7 @@ package io.enkrypt.kafka.listener;
 import io.enkrypt.avro.capture.BlockRecord;
 import io.enkrypt.avro.capture.PremineBalanceRecord;
 import io.enkrypt.avro.common.Data20;
+import io.enkrypt.kafka.Kafka;
 import io.enkrypt.kafka.db.BlockRecordStore;
 import io.enkrypt.kafka.mapping.ObjectMapper;
 import org.ethereum.config.SystemProperties;
@@ -31,15 +32,19 @@ public class BlockSummaryEthereumListener implements EthereumListener {
   private final KafkaPendingTxsListener pendingTxsListener;
   private final ObjectMapper objectMapper;
 
+  private final Kafka kafka;
+
   private long lastBackupAtMs;
-  private long backupPeriodMs = TimeUnit.MINUTES.toMillis(1);
+  private long backupPeriodMs = TimeUnit.MINUTES.toMillis(15);
 
   public BlockSummaryEthereumListener(SystemProperties config,
+                                      Kafka kafka,
                                       BlockRecordStore blockRecordStore,
                                       KafkaBlockSummaryPublisher kafkaBlockSummaryPublisher,
                                       KafkaPendingTxsListener pendingTxsListener,
                                       ObjectMapper objectMapper) {
     this.config = config;
+    this.kafka = kafka;
     this.blockRecordStore = blockRecordStore;
     this.kafkaBlockSummaryPublisher = kafkaBlockSummaryPublisher;
     this.pendingTxsListener = pendingTxsListener;
@@ -126,7 +131,11 @@ public class BlockSummaryEthereumListener implements EthereumListener {
     // persist to store for replay later
     try {
       blockRecordStore.put(number, record);
-      kafkaBlockSummaryPublisher.onBlock(record);
+
+      if(this.kafka.isEnabled()) {
+        kafkaBlockSummaryPublisher.onBlock(record);
+      }
+
     } catch (IOException e) {
 
       // TODO ensure we stop all processing

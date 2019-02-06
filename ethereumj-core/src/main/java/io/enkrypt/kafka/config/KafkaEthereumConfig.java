@@ -69,6 +69,7 @@ public class KafkaEthereumConfig {
   @Bean
   @Primary
   public CompositeEthereumListener ethereumListener(SystemProperties config,
+                                                    Kafka kafka,
                                                     ObjectMapper objectMapper,
                                                     BlockRecordStore blockRecordStore,
                                                     KafkaPendingTxsListener pendingTxsListener,
@@ -81,6 +82,7 @@ public class KafkaEthereumConfig {
     final BlockSummaryEthereumListener blockSummaryListener =
       new BlockSummaryEthereumListener(
         config,
+        kafka,
         blockRecordStore,
         blockListener,
         pendingTxsListener,

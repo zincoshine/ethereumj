@@ -58,6 +58,8 @@ public class KafkaBlockSummaryPublisher implements Runnable {
 
     BlockRecord next;
 
+    if(!kafka.isEnabled()) this.running = false;
+
     while (running) {
       try {
 
@@ -91,8 +93,6 @@ public class KafkaBlockSummaryPublisher implements Runnable {
   }
 
   private void publishBatch(List<BlockRecord> batch) {
-
-    if(!kafka.isEnabled()) return;
 
     final KafkaProducer<BlockKeyRecord, BlockRecord> producer = kafka.getBlockProducer();
 

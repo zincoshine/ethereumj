@@ -44,7 +44,7 @@ RUN ls *.tar | xargs -n1 tar -xvf && \
 EXPOSE 30303
 
 # Expose volume
-VOLUME /data
+VOLUME /data/backup
 
 # Define entry
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
