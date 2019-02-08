@@ -63,8 +63,9 @@ public class StateSource extends SourceChainBox<byte[], byte[], byte[], byte[]>
 
     @Autowired
     public void setConfig(SystemProperties config) {
-        int size = config.getConfig().getInt("cache.stateCacheSize");
-        readCache.withMaxCapacity(size * 1024 * 1024 / 512); // 512 - approx size of a node
+        long size = config.getConfig().getLong("cache.stateCacheSize");
+        long maxCapacity = size * 1024 * 1024 / 512;
+        readCache.withMaxCapacity((int) maxCapacity); // 512 - approx size of a node
     }
 
     @Autowired
