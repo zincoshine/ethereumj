@@ -120,7 +120,7 @@ public class ReceiptsDownloader {
                 if (validate(block, receipts)) {
                     for (int i = 0; i < queuedBlock.receipts.size(); i++) {
                         TransactionReceipt receipt = receipts.get(i);
-                        TransactionInfo txInfo = new TransactionInfo(receipt, block.getHash(), i);
+                        TransactionInfo txInfo = new TransactionInfo(receipt, block.getHash(), i, null);
                         txInfo.setTransaction(block.getTransactionsList().get(i));
                         txStore.put(txInfo);
                     }
@@ -240,7 +240,7 @@ public class ReceiptsDownloader {
             return optimalReqSz;
         }
     }
-    
+
     private int fillBlockQueue() {
         int blocksToAdd = getTargetBlocksInMem() - blocksInMem.get();
         if (blocksToAdd < MAX_IN_REQUEST)

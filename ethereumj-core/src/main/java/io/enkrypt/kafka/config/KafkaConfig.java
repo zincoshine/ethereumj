@@ -4,7 +4,6 @@ import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 import io.enkrypt.kafka.Kafka;
 import io.enkrypt.kafka.KafkaImpl;
 import io.enkrypt.kafka.NullKafka;
-import io.enkrypt.kafka.db.BlockRecordStore;
 import io.enkrypt.kafka.mapping.ObjectMapper;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.ethereum.config.CommonConfig;
@@ -28,11 +27,6 @@ public class KafkaConfig {
   public KafkaConfig() {
     // TODO: We can intercept KafkaException to stop completely the app in case of a bad crash
     Thread.setDefaultUncaughtExceptionHandler((t, e) -> logger.error("Uncaught exception", e));
-  }
-
-  @Bean
-  public BlockRecordStore blockSummaryStore() {
-    return new BlockRecordStore(commonConfig.keyValueDataSource("block-summaries"));
   }
 
   @Bean

@@ -20,10 +20,7 @@ package org.ethereum.core;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPItem;
-import org.ethereum.util.RLPList;
+import org.ethereum.util.*;
 import org.ethereum.vm.LogInfo;
 
 import java.math.BigInteger;
@@ -35,78 +32,91 @@ import java.math.BigInteger;
  * hash of the parent block on top of which the transaction was executed
  * If the transaction is already mined into a block the context
  * is the containing block and the index of the transaction in that block
- *
+ * <p>
  * Created by Ruben on 8/1/2016.
  */
 public class TransactionInfo {
 
-    TransactionReceipt receipt;
-    byte[] blockHash;
-    // user for pending transaction
-    byte[] parentBlockHash;
-    int index;
+  TransactionReceipt receipt;
+  TransactionExecutionSummary executionSummary;
+  byte[] blockHash;
+  // user for pending transaction
+  byte[] parentBlockHash;
+  int index;
 
-    public TransactionInfo(TransactionReceipt receipt, byte[] blockHash, int index) {
-        this.receipt = receipt;
-        this.blockHash = blockHash;
-        this.index = index;
-    }
+  public TransactionInfo(TransactionReceipt receipt, byte[] blockHash, int index, TransactionExecutionSummary executionSummary) {
+    this.receipt = receipt;
+    this.blockHash = blockHash;
+    this.index = index;
+    this.executionSummary = executionSummary;
+  }
 
-    /**
-     * Creates a pending tx info
-     */
-    public TransactionInfo(TransactionReceipt receipt) {
-        this.receipt = receipt;
-    }
+  /**
+   * Creates a pending tx info
+   */
+  public TransactionInfo(TransactionReceipt receipt) {
+    this.receipt = receipt;
+  }
 
-    public TransactionInfo(byte[] rlp) {
-        RLPList params = RLP.decode2(rlp);
-        RLPList txInfo = (RLPList) params.get(0);
-        RLPList receiptRLP = (RLPList) txInfo.get(0);
-        RLPItem blockHashRLP  = (RLPItem) txInfo.get(1);
-        RLPItem indexRLP = (RLPItem) txInfo.get(2);
+  public TransactionInfo(byte[] rlp) {
+    RLPList params = RLP.decode2(rlp);
+    RLPList txInfo = (RLPList) params.get(0);
+    RLPList receiptRLP = (RLPList) txInfo.get(0);
+    RLPItem blockHashRLP = (RLPItem) txInfo.get(1);
+    RLPItem indexRLP = (RLPItem) txInfo.get(2);
+    RLPList executionSummaryRLP = (RLPList) txInfo.get(3);
 
-        receipt = new TransactionReceipt(receiptRLP.getRLPData());
-        blockHash = blockHashRLP.getRLPData();
-        if (indexRLP.getRLPData() == null)
-            index = 0;
-        else
-            index = new BigInteger(1, indexRLP.getRLPData()).intValue();
-    }
+    receipt = new TransactionReceipt(receiptRLP.getRLPData());
+    executionSummary = new TransactionExecutionSummary(executionSummaryRLP.getRLPData());
+    blockHash = blockHashRLP.getRLPData();
+    if (indexRLP.getRLPData() == null)
+      index = 0;
+    else
+      index = new BigInteger(1, indexRLP.getRLPData()).intValue();
+  }
 
-    public void setTransaction(Transaction tx){
-        receipt.setTransaction(tx);
-    }
+  public void setTransaction(Transaction tx) {
+    receipt.setTransaction(tx);
+  }
 
-    /* [receipt, blockHash, index] */
-    public byte[] getEncoded() {
+  /* [receipt, blockHash, index] */
+  public byte[] getEncoded() {
 
-        byte[] receiptRLP = this.receipt.getEncoded();
-        byte[] blockHashRLP = RLP.encodeElement(blockHash);
-        byte[] indexRLP = RLP.encodeInt(index);
+    byte[] receiptRLP = this.receipt.getEncoded();
+    byte[] blockHashRLP = RLP.encodeElement(blockHash);
+    byte[] indexRLP = RLP.encodeInt(index);
+    byte[] executionSummaryRLP = this.executionSummary.getEncoded();
 
-        byte[] rlpEncoded = RLP.encodeList(receiptRLP, blockHashRLP, indexRLP);
+    byte[] rlpEncoded = RLP.encodeList(receiptRLP, blockHashRLP, indexRLP, executionSummaryRLP);
 
-        return rlpEncoded;
-    }
+    return rlpEncoded;
+  }
 
-    public TransactionReceipt getReceipt(){
-        return receipt;
-    }
+  public TransactionReceipt getReceipt() {
+    return receipt;
+  }
 
-    public byte[] getBlockHash() { return blockHash; }
+  public TransactionExecutionSummary getExecutionSummary() {
+    return executionSummary;
+  }
 
-    public byte[] getParentBlockHash() {
-        return parentBlockHash;
-    }
+  public byte[] getBlockHash() {
+    return blockHash;
+  }
 
-    public void setParentBlockHash(byte[] parentBlockHash) {
-        this.parentBlockHash = parentBlockHash;
-    }
+  public byte[] getParentBlockHash() {
+    return parentBlockHash;
+  }
 
-    public int getIndex() { return index; }
+  public void setParentBlockHash(byte[] parentBlockHash) {
+    this.parentBlockHash = parentBlockHash;
+  }
 
-    public boolean isPending() {
-        return blockHash == null;
-    }
+  public int getIndex() {
+    return index;
+  }
+
+  public boolean isPending() {
+    return blockHash == null;
+  }
 }

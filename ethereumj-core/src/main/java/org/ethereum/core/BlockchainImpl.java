@@ -111,7 +111,8 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
   private static final int MAGIC_REWARD_OFFSET = 8;
   public static final byte[] EMPTY_LIST_HASH = sha3(RLP.encodeList(new byte[0]));
 
-  @Autowired @Qualifier("defaultRepository")
+  @Autowired
+  @Qualifier("defaultRepository")
   private Repository repository;
 
   @Autowired
@@ -181,7 +182,9 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
 
   private Stack<State> stateStack = new Stack<>();
 
-  /** Tests only **/
+  /**
+   * Tests only
+   **/
   public BlockchainImpl() {
   }
 
@@ -503,7 +506,7 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
       new byte[0],  // nonce   (to mine)
       new byte[0],  // receiptsRoot - computed after running all transactions
       calcTxTrie(txs),    // TransactionsRoot - computed after running all transactions
-      new byte[] {0}, // stateRoot - computed after running all transactions
+      new byte[]{0}, // stateRoot - computed after running all transactions
       txs,
       null);  // uncle list
 
@@ -589,6 +592,7 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
 
     BlockSummary summary = processBlock(repo, block);
     final List<TransactionReceipt> receipts = summary.getReceipts();
+    final List<TransactionExecutionSummary> executionSummaries = summary.getExecutionSummaries();
 
     // Sanity checks
 
@@ -637,11 +641,11 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
 
       if (!byTest) {
         dbFlushManager.commit(() -> {
-          storeBlock(block, receipts);
+          storeBlock(block, receipts, executionSummaries);
           repository.commit();
         });
       } else {
-        storeBlock(block, receipts);
+        storeBlock(block, receipts, executionSummaries);
       }
     }
 
@@ -835,7 +839,7 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
     if (!isParentBlock) {
       it = blockStore.getBlockByHash(it.getParentHash());
     }
-    while(it != null && it.getNumber() >= limitNum) {
+    while (it != null && it.getNumber() >= limitNum) {
       ret.add(new ByteArrayWrapper(it.getHash()));
       it = blockStore.getBlockByHash(it.getParentHash());
     }
@@ -849,7 +853,7 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
     if (!isParentBlock) {
       it = blockStore.getBlockByHash(it.getParentHash());
     }
-    while(it.getNumber() > limitNum) {
+    while (it.getNumber() > limitNum) {
       for (BlockHeader uncle : it.getUncleList()) {
         ret.add(new ByteArrayWrapper(uncle.getHash()));
       }
@@ -862,8 +866,7 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
 
     if (!block.isGenesis() && !config.blockChainOnly()) {
       return applyBlock(track, block);
-    }
-    else {
+    } else {
       return new BlockSummary(block, new HashMap<byte[], BigInteger>(), new ArrayList<TransactionReceipt>(), new ArrayList<TransactionExecutionSummary>());
     }
   }
@@ -964,7 +967,7 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
           .multiply(BigInteger.valueOf(MAGIC_REWARD_OFFSET + uncle.getNumber() - block.getNumber()))
           .divide(BigInteger.valueOf(MAGIC_REWARD_OFFSET));
 
-        track.addBalance(uncle.getCoinbase(),uncleReward);
+        track.addBalance(uncle.getCoinbase(), uncleReward);
         BigInteger existingUncleReward = rewards.get(uncle.getCoinbase());
         if (existingUncleReward == null) {
           rewards.put(uncle.getCoinbase(), uncleReward);
@@ -987,7 +990,7 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
   }
 
   @Override
-  public synchronized void storeBlock(Block block, List<TransactionReceipt> receipts) {
+  public synchronized void storeBlock(Block block, List<TransactionReceipt> receipts, List<TransactionExecutionSummary> executionSummaries) {
 
     if (fork)
       blockStore.saveBlock(block, totalDifficulty, false);
@@ -995,7 +998,14 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
       blockStore.saveBlock(block, totalDifficulty, true);
 
     for (int i = 0; i < receipts.size(); i++) {
-      transactionStore.put(new TransactionInfo(receipts.get(i), block.getHash(), i));
+
+      // remove the tx from the execution summary before persisting
+      final TransactionExecutionSummary executionSummary =
+        new TransactionExecutionSummary.Builder(executionSummaries.get(i))
+          .tx(null)
+          .build();
+
+      transactionStore.put(new TransactionInfo(receipts.get(i), block.getHash(), i, executionSummary));
     }
 
     if (pruneManager != null) {
@@ -1107,7 +1117,7 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
 
   public void updateBlockTotDifficulties(long startFrom) {
     // no synchronization here not to lock instance for long period
-    while(true) {
+    while (true) {
       synchronized (this) {
         ((IndexedBlockStore) blockStore).updateTotDifficulties(startFrom);
 
@@ -1131,7 +1141,7 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
             }
           }
 
-          if (totalDifficulty.compareTo(maxTD) < 0)  {
+          if (totalDifficulty.compareTo(maxTD) < 0) {
             blockStore.reBranch(bestStoredBlock);
             bestBlock = bestStoredBlock;
             totalDifficulty = maxTD;
@@ -1227,8 +1237,9 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
   /**
    * Searches block in blockStore, if it's not found there
    * and headerStore is defined, searches blockHeader in it.
+   *
    * @param number block number
-   * @return  Block header
+   * @return Block header
    */
   private BlockHeader findHeaderByNumber(long number) {
     Block block = blockStore.getChainBlockByNumber(number);
@@ -1246,6 +1257,7 @@ public class BlockchainImpl implements Blockchain, org.ethereum.facade.Blockchai
   /**
    * Searches block in blockStore, if it's not found there
    * and headerStore is defined, searches blockHeader in it.
+   *
    * @param hash block hash
    * @return Block header
    */

@@ -75,7 +75,7 @@ public class TransactionStoreTest {
         executionResult = tx1Info_.getReceipt().getExecutionResult();
         Assert.assertArrayEquals(DataWord.of(777).getData(), executionResult);
 
-        TransactionInfo highIndex = new TransactionInfo(tx1Info.getReceipt(), tx1Info.getBlockHash(), 255);
+        TransactionInfo highIndex = new TransactionInfo(tx1Info.getReceipt(), tx1Info.getBlockHash(), 255, null);
         TransactionInfo highIndexCopy = new TransactionInfo(highIndex.getEncoded());
         Assert.assertArrayEquals(highIndex.getBlockHash(), highIndexCopy.getBlockHash());
         Assert.assertEquals(highIndex.getIndex(), highIndexCopy.getIndex());

@@ -8,7 +8,6 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.InternalTransaction;
 
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +64,7 @@ public class BlockSummaryMapping implements ObjectMapping {
 
     builder.setTransactions(txRecords);
 
-    final Map<ByteBuffer, TransactionExecutionSummary> execSummariesByHash = bs.getSummaries()
+    final Map<ByteBuffer, TransactionExecutionSummary> execSummariesByHash = bs.getExecutionSummaries()
       .stream()
       .collect(Collectors.toMap(s -> wrap(s.getTransactionHash()), s -> s));
 

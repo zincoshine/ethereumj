@@ -17,13 +17,10 @@
  */
 package org.ethereum.util.blockchain;
 
-import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.ByzantiumConfig;
-import org.ethereum.config.blockchain.DaoHFConfig;
 import org.ethereum.config.blockchain.DaoNoHFConfig;
-import org.ethereum.config.blockchain.FrontierConfig;
 import org.ethereum.config.blockchain.HomesteadConfig;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -285,7 +282,7 @@ public class StandaloneBlockchain implements LocalBlockchain {
 
     private TransactionExecutionSummary getTxSummary(BlockSummary bs, int idx) {
         TransactionReceipt txReceipt = bs.getReceipts().get(idx);
-        for (TransactionExecutionSummary summary : bs.getSummaries()) {
+        for (TransactionExecutionSummary summary : bs.getExecutionSummaries()) {
             if (FastByteComparisons.equal(txReceipt.getTransaction().getHash(), summary.getTransaction().getHash())) {
                 return summary;
             }

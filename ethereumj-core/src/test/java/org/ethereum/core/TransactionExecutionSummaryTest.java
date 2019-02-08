@@ -51,7 +51,7 @@ public class TransactionExecutionSummaryTest {
 
         final int nestedLevelCount = 5000;
         final int countByLevel = 1;
-        List<InternalTransaction> internalTransactions = randomInternalTransactions(tx, nestedLevelCount, countByLevel);
+        List<InternalTransaction> internalTransactions = new ArrayList<>();
 
         byte[] result = randomBytes(32);
 

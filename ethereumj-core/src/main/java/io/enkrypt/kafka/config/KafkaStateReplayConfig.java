@@ -4,18 +4,23 @@ import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 import io.enkrypt.kafka.Kafka;
 import io.enkrypt.kafka.KafkaImpl;
 import io.enkrypt.kafka.NullKafka;
-import io.enkrypt.kafka.db.BlockRecordStore;
 import io.enkrypt.kafka.listener.KafkaBlockSummaryPublisher;
 import io.enkrypt.kafka.listener.KafkaPendingTxsListener;
 import io.enkrypt.kafka.mapping.ObjectMapper;
 import io.enkrypt.kafka.replay.StateReplayer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.ethereum.config.CommonConfig;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.datasource.DbSettings;
 import org.ethereum.datasource.DbSource;
+import org.ethereum.datasource.Source;
 import org.ethereum.datasource.rocksdb.RocksDbDataSource;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.db.TransactionStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -29,6 +34,9 @@ public class KafkaStateReplayConfig {
 
   private static Logger logger = LoggerFactory.getLogger("general");
 
+  @Autowired
+  private CommonConfig commonConfig;
+
   public KafkaStateReplayConfig() {
     // TODO: We can intercept KafkaException to stop completely the app in case of a bad crash
     Thread.setDefaultUncaughtExceptionHandler((t, e) -> logger.error("Uncaught exception", e));
@@ -40,6 +48,24 @@ public class KafkaStateReplayConfig {
   }
 
   @Bean
+  public BlockStore blockStore(){
+    commonConfig.fastSyncCleanUp();
+    IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
+    Source<byte[], byte[]> block = commonConfig.cachedDbSource("block");
+    Source<byte[], byte[]> index = commonConfig.cachedDbSource("index");
+    indexedBlockStore.init(index, block);
+
+    return indexedBlockStore;
+  }
+
+  @Bean
+  public TransactionStore transactionStore() {
+    commonConfig.fastSyncCleanUp();
+    return new TransactionStore(commonConfig.cachedDbSource("transactions"));
+  }
+
+
+  @Bean
   public StateReplayer stateReplayer() {
     return new StateReplayer();
   }
@@ -49,11 +75,6 @@ public class KafkaStateReplayConfig {
     ds.setName(name);
     ds.init(settings);
     return ds;
-  }
-
-  @Bean
-  public BlockRecordStore blockSummaryStore() {
-    return new BlockRecordStore(dbSource("block-summaries", DbSettings.DEFAULT));
   }
 
   @Bean

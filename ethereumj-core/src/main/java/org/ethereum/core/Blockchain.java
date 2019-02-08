@@ -29,7 +29,7 @@ public interface Blockchain {
 
     ImportResult tryToConnect(Block block);
 
-    void storeBlock(Block block, List<TransactionReceipt> receipts);
+    void storeBlock(Block block, List<TransactionReceipt> receipts, List<TransactionExecutionSummary> executionSummaries);
 
     Block getBlockByNumber(long blockNr);
 

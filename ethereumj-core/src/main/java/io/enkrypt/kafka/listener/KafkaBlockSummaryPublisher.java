@@ -36,7 +36,7 @@ public class KafkaBlockSummaryPublisher implements Runnable {
   private final ConcurrentLinkedQueue<BlockRecord> queue;
   private final ArrayList<BlockRecord> batch;
 
-  private final int batchSize = 64;
+  private final int batchSize = 128;
 
   private volatile boolean running = true;
 

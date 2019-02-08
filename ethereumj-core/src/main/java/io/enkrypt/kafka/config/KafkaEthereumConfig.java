@@ -1,7 +1,6 @@
 package io.enkrypt.kafka.config;
 
 import io.enkrypt.kafka.Kafka;
-import io.enkrypt.kafka.db.BlockRecordStore;
 import io.enkrypt.kafka.listener.BlockSummaryEthereumListener;
 import io.enkrypt.kafka.listener.KafkaBlockSummaryPublisher;
 import io.enkrypt.kafka.listener.KafkaPendingTxsListener;
@@ -71,19 +70,15 @@ public class KafkaEthereumConfig {
   public CompositeEthereumListener ethereumListener(SystemProperties config,
                                                     Kafka kafka,
                                                     ObjectMapper objectMapper,
-                                                    BlockRecordStore blockRecordStore,
                                                     KafkaPendingTxsListener pendingTxsListener,
                                                     KafkaBlockSummaryPublisher blockListener) {
 
     final CompositeEthereumListener compositeListener = new CompositeEthereumListener();
 
-    // TODO make block listening inline to ensure failure to persist causes all processing to stop
-
     final BlockSummaryEthereumListener blockSummaryListener =
       new BlockSummaryEthereumListener(
         config,
         kafka,
-        blockRecordStore,
         blockListener,
         pendingTxsListener,
         objectMapper

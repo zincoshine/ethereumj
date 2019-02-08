@@ -4,7 +4,6 @@ import io.enkrypt.avro.capture.BlockRecord;
 import io.enkrypt.avro.capture.PremineBalanceRecord;
 import io.enkrypt.avro.common.Data20;
 import io.enkrypt.kafka.Kafka;
-import io.enkrypt.kafka.db.BlockRecordStore;
 import io.enkrypt.kafka.mapping.ObjectMapper;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
@@ -16,7 +15,6 @@ import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +25,6 @@ import static java.nio.ByteBuffer.wrap;
 public class BlockSummaryEthereumListener implements EthereumListener {
 
   private final SystemProperties config;
-  private final BlockRecordStore blockRecordStore;
   private final KafkaBlockSummaryPublisher kafkaBlockSummaryPublisher;
   private final KafkaPendingTxsListener pendingTxsListener;
   private final ObjectMapper objectMapper;
@@ -39,13 +36,11 @@ public class BlockSummaryEthereumListener implements EthereumListener {
 
   public BlockSummaryEthereumListener(SystemProperties config,
                                       Kafka kafka,
-                                      BlockRecordStore blockRecordStore,
                                       KafkaBlockSummaryPublisher kafkaBlockSummaryPublisher,
                                       KafkaPendingTxsListener pendingTxsListener,
                                       ObjectMapper objectMapper) {
     this.config = config;
     this.kafka = kafka;
-    this.blockRecordStore = blockRecordStore;
     this.kafkaBlockSummaryPublisher = kafkaBlockSummaryPublisher;
     this.pendingTxsListener = pendingTxsListener;
     this.objectMapper = objectMapper;
@@ -114,33 +109,10 @@ public class BlockSummaryEthereumListener implements EthereumListener {
   @Override
   public void onBlock(BlockSummary blockSummary) {
 
-    final long now = System.currentTimeMillis();
-    if(now - lastBackupAtMs > backupPeriodMs) {
-
-      blockRecordStore.flush();
-      blockRecordStore.backup();
-
-      lastBackupAtMs = now;
-    }
-
-    final Block block = blockSummary.getBlock();
-    final long number = block.getNumber();
-
     final BlockRecord record = toRecord(blockSummary);
 
-    // persist to store for replay later
-    try {
-      blockRecordStore.put(number, record);
-
-      if(this.kafka.isEnabled()) {
-        kafkaBlockSummaryPublisher.onBlock(record);
-      }
-
-    } catch (IOException e) {
-
-      // TODO ensure we stop all processing
-
-      throw new RuntimeException(e);
+    if (this.kafka.isEnabled()) {
+      kafkaBlockSummaryPublisher.onBlock(record);
     }
 
   }

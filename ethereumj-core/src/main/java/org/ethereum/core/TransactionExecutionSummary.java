@@ -57,12 +57,13 @@ public class TransactionExecutionSummary {
   private byte[] rlpEncoded;
   private boolean parsed;
 
-
   public TransactionExecutionSummary(Transaction transaction) {
     this.tx = transaction;
-    this.gasLimit = toBI(transaction.getGasLimit());
-    this.gasPrice = toBI(transaction.getGasPrice());
-    this.value = toBI(transaction.getValue());
+    if(transaction != null) {
+      this.gasLimit = toBI(transaction.getGasLimit());
+      this.gasPrice = toBI(transaction.getGasPrice());
+      this.value = toBI(transaction.getValue());
+    }
   }
 
   public TransactionExecutionSummary(byte[] rlpEncoded) {
@@ -76,7 +77,8 @@ public class TransactionExecutionSummary {
     RLPList decodedTxList = RLP.decode2(rlpEncoded);
     RLPList summary = (RLPList) decodedTxList.get(0);
 
-    this.tx = new Transaction(summary.get(0).getRLPData());
+    byte[] txBytes = summary.get(0).getRLPData();
+    this.tx = txBytes != null && txBytes.length > 0 ? new Transaction(txBytes) : null;
     this.value = decodeBigInteger(summary.get(1).getRLPData());
     this.gasPrice = decodeBigInteger(summary.get(2).getRLPData());
     this.gasLimit = decodeBigInteger(summary.get(3).getRLPData());
@@ -99,9 +101,10 @@ public class TransactionExecutionSummary {
   public byte[] getEncoded() {
     if (rlpEncoded != null) return rlpEncoded;
 
+    final Transaction tx = this.tx;
 
     this.rlpEncoded = RLP.encodeList(
-      this.tx.getEncoded(),
+      tx != null ? this.tx.getEncoded() : RLP.encodeElement(new byte[0]),
       RLP.encodeBigInteger(this.value),
       RLP.encodeBigInteger(this.gasPrice),
       RLP.encodeBigInteger(this.gasLimit),
@@ -329,9 +332,33 @@ public class TransactionExecutionSummary {
 
     private final TransactionExecutionSummary summary;
 
-    Builder(Transaction transaction) {
+    public Builder(Transaction transaction) {
       Assert.notNull(transaction, "Cannot build TransactionExecutionSummary for null transaction.");
       summary = new TransactionExecutionSummary(transaction);
+    }
+
+    public Builder(TransactionExecutionSummary proto) {
+      summary = new TransactionExecutionSummary(proto.tx);
+      summary.tx = proto.tx;
+      summary.value = proto.value;
+      summary.gasPrice = proto.gasPrice;
+      summary.gasLimit = proto.gasLimit;
+      summary.gasUsed = proto.gasUsed;
+      summary.gasLeftover = proto.gasLeftover;
+      summary.gasRefund = proto.gasRefund;
+
+      summary.deletedAccounts = new ArrayList<>(proto.deletedAccounts);
+      summary.internalTransactions = new ArrayList<>(proto.internalTransactions);
+      summary.storageDiff = new HashMap<>(proto.storageDiff);
+      summary.touchedStorage = new TransactionTouchedStorage(proto.touchedStorage.getEntries());
+      summary.result = proto.result;
+      summary.logs = proto.logs != null ? new ArrayList<>(proto.logs) : new ArrayList<>();
+      summary.failed = proto.failed;
+    }
+
+    public Builder tx(Transaction tx){
+      summary.tx = tx;
+      return this;
     }
 
     public Builder gasUsed(BigInteger gasUsed) {

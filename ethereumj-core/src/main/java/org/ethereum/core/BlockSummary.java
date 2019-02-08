@@ -36,7 +36,7 @@ public class BlockSummary {
   private final Block block;
   private final Map<byte[], BigInteger> rewards;
   private final List<TransactionReceipt> receipts;
-  private final List<TransactionExecutionSummary> summaries;
+  private final List<TransactionExecutionSummary> executionSummaries;
   private BigInteger totalDifficulty = BigInteger.ZERO;
 
   public BlockSummary(byte[] rlp) {
@@ -44,7 +44,7 @@ public class BlockSummary {
 
     this.block = new Block(rlpList.get(0).getRLPData());
     this.rewards = decodeRewards(RLP.unwrapList(rlpList.get(1).getRLPData()));
-    this.summaries = decodeSummaries(RLP.unwrapList(rlpList.get(2).getRLPData()));
+    this.executionSummaries = decodeSummaries(RLP.unwrapList(rlpList.get(2).getRLPData()));
     this.receipts = new ArrayList<>();
 
     Map<String, TransactionReceipt> receiptByTxHash = decodeReceipts(RLP.unwrapList(rlpList.get(3).getRLPData()));
@@ -56,11 +56,11 @@ public class BlockSummary {
     }
   }
 
-  public BlockSummary(Block block, Map<byte[], BigInteger> rewards, List<TransactionReceipt> receipts, List<TransactionExecutionSummary> summaries) {
+  public BlockSummary(Block block, Map<byte[], BigInteger> rewards, List<TransactionReceipt> receipts, List<TransactionExecutionSummary> executionSummaries) {
     this.block = block;
     this.rewards = rewards;
     this.receipts = receipts;
-    this.summaries = summaries;
+    this.executionSummaries = executionSummaries;
   }
 
   public Block getBlock() {
@@ -71,8 +71,8 @@ public class BlockSummary {
     return receipts;
   }
 
-  public List<TransactionExecutionSummary> getSummaries() {
-    return summaries;
+  public List<TransactionExecutionSummary> getExecutionSummaries() {
+    return executionSummaries;
   }
 
   /**
@@ -94,7 +94,7 @@ public class BlockSummary {
     return RLP.encodeList(
       block.getEncoded(),
       encodeRewards(rewards),
-      encodeSummaries(summaries),
+      encodeSummaries(executionSummaries),
       encodeReceipts(receipts)
     );
   }

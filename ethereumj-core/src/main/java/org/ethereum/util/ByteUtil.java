@@ -31,10 +31,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 import java.util.zip.GZIPOutputStream;
 
 public class ByteUtil {
@@ -769,5 +767,26 @@ public class ByteUtil {
     } catch (IOException ex) {
       throw new RuntimeException(ex);
     }
+  }
+
+  public static <K, V> byte[] encodeMap(Map<K, V> map, Function<K, byte[]> keyEncoder, Function<V, byte[]> valueEncoder) {
+    byte[][] result = new byte[map.size()][];
+    int i = 0;
+    for (Map.Entry<K, V> entry : map.entrySet()) {
+      byte[] key = keyEncoder.apply(entry.getKey());
+      byte[] value = valueEncoder.apply(entry.getValue());
+      result[i++] = RLP.encodeList(key, value);
+    }
+    return RLP.encodeList(result);
+  }
+
+  public static <K, V> Map<K, V> decodeMap(RLPList list, Function<byte[], K> keyDecoder, Function<byte[], V> valueDecoder) {
+    Map<K, V> result = new HashMap<>();
+    for (RLPElement entry : list) {
+      K key = keyDecoder.apply(((RLPList) entry).get(0).getRLPData());
+      V value = valueDecoder.apply(((RLPList) entry).get(1).getRLPData());
+      result.put(key, value);
+    }
+    return result;
   }
 }
