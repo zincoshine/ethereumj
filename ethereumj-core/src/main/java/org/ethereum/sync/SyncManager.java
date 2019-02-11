@@ -280,7 +280,7 @@ public class SyncManager extends BlockDownloader {
         timeFormat.setDecimalFormatSymbols(DecimalFormatSymbols.getInstance(Locale.US));
 
         long lastBackupAtMs = System.currentTimeMillis();
-        final long backupPeriodMs = TimeUnit.HOURS.toMillis(1);
+        final long backupPeriodMs = TimeUnit.HOURS.toMillis(2);
 
         while (!Thread.currentThread().isInterrupted()) {
 
