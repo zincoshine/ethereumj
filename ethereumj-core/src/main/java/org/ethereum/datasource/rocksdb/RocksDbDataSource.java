@@ -60,9 +60,9 @@ public class RocksDbDataSource implements DbSource<byte[]> {
     DbSettings settings = DbSettings.DEFAULT;
 
     // The native RocksDB insert/update/delete are normally thread-safe
-    // However close operation is not thread-safe.
+    // However shutdown operation is not thread-safe.
     // This ReadWriteLock still permits concurrent execution of insert/delete/update operations
-    // however blocks them on init/close/delete operations
+    // however blocks them on init/shutdown/delete operations
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
     static {

@@ -272,21 +272,21 @@ public class WorldManager {
   }
 
   public void close() {
-    logger.info("close: stopping peer discovery ...");
+    logger.info("shutdown: stopping peer discovery ...");
     stopPeerDiscovery();
-    logger.info("close: stopping ChannelManager ...");
+    logger.info("shutdown: stopping ChannelManager ...");
     channelManager.close();
-    logger.info("close: stopping SyncManager ...");
+    logger.info("shutdown: stopping SyncManager ...");
     syncManager.close();
-    logger.info("close: stopping PeerClient ...");
+    logger.info("shutdown: stopping PeerClient ...");
     activePeer.close();
-    logger.info("close: shutting down event dispatch thread used by EventBus ...");
+    logger.info("shutdown: shutting down event dispatch thread used by EventBus ...");
     eventDispatchThread.shutdown();
-    logger.info("close: closing Blockchain instance ...");
+    logger.info("shutdown: closing Blockchain instance ...");
     blockchain.close();
-    logger.info("close: closing main repository ...");
+    logger.info("shutdown: closing main repository ...");
     repository.close();
-    logger.info("close: database flush manager ...");
+    logger.info("shutdown: database flush manager ...");
     dbFlushManager.close();
   }
 

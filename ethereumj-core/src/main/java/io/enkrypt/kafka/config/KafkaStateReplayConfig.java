@@ -4,8 +4,7 @@ import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 import io.enkrypt.kafka.Kafka;
 import io.enkrypt.kafka.KafkaImpl;
 import io.enkrypt.kafka.NullKafka;
-import io.enkrypt.kafka.listener.KafkaBlockSummaryPublisher;
-import io.enkrypt.kafka.listener.KafkaPendingTxsListener;
+import io.enkrypt.kafka.listener.KafkaEthereumListener;
 import io.enkrypt.kafka.mapping.ObjectMapper;
 import io.enkrypt.kafka.replay.StateReplayer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -48,12 +47,17 @@ public class KafkaStateReplayConfig {
   }
 
   @Bean
-  public BlockStore blockStore(){
+  public BlockStore blockStore() {
     commonConfig.fastSyncCleanUp();
     IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
     Source<byte[], byte[]> block = commonConfig.cachedDbSource("block");
     Source<byte[], byte[]> index = commonConfig.cachedDbSource("index");
     indexedBlockStore.init(index, block);
+
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      indexedBlockStore.flush();
+      indexedBlockStore.close();
+    }));
 
     return indexedBlockStore;
   }
@@ -61,7 +65,14 @@ public class KafkaStateReplayConfig {
   @Bean
   public TransactionStore transactionStore() {
     commonConfig.fastSyncCleanUp();
-    return new TransactionStore(commonConfig.cachedDbSource("transactions"));
+    final TransactionStore txStore = new TransactionStore(commonConfig.cachedDbSource("transactions"));
+
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      txStore.flush();
+      txStore.close();
+    }));
+
+    return txStore;
   }
 
 
@@ -124,22 +135,20 @@ public class KafkaStateReplayConfig {
   }
 
   @Bean
-  public KafkaPendingTxsListener kafkaPendingTxsListener(Kafka kafka, ObjectMapper objectMapper) {
-    return new KafkaPendingTxsListener(kafka, objectMapper);
-  }
+  public KafkaEthereumListener kafkaEthereumListener(Kafka kafka,
+                                                     SystemProperties config,
+                                                     ObjectMapper objectMapper) {
 
-  @Bean
-  public KafkaBlockSummaryPublisher kafkaBlockListener(Kafka kafka,
-                                                       ExecutorService executor) {
+    final KafkaEthereumListener kafkaEthereumListener = new KafkaEthereumListener(kafka, config, objectMapper);
 
-    final KafkaBlockSummaryPublisher blockListener = new KafkaBlockSummaryPublisher(kafka);
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      try {
+        kafkaEthereumListener.shutdown();
+      } catch (InterruptedException e) {
+        logger.warn("kafka ethereum listener shutdown: executor interrupted: {}", e.getMessage());
+      }
+    }));
 
-    // run the block listener with it's own thread and handle shutdown
-
-    executor.submit(blockListener);
-
-    Runtime.getRuntime().addShutdownHook(new Thread(blockListener::stop));
-
-    return blockListener;
+    return kafkaEthereumListener;
   }
 }

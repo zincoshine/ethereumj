@@ -1,15 +1,11 @@
 package io.enkrypt.kafka.replay;
 
-import io.enkrypt.avro.capture.BlockRecord;
-import io.enkrypt.avro.capture.PremineBalanceRecord;
-import io.enkrypt.avro.common.Data20;
 import io.enkrypt.kafka.Kafka;
-import io.enkrypt.kafka.listener.KafkaBlockSummaryPublisher;
+import io.enkrypt.kafka.listener.KafkaEthereumListener;
 import io.enkrypt.kafka.mapping.ObjectMapper;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.TransactionStore;
 import org.slf4j.Logger;
@@ -24,17 +20,14 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import static java.lang.Long.parseLong;
-import static java.nio.ByteBuffer.wrap;
-import static org.ethereum.core.Denomination.SZABO;
 
 public class StateReplayer {
 
   // to avoid using minGasPrice=0 from Genesis for the wallet
-  private static final long INITIAL_MIN_GAS_PRICE = 10 * SZABO.longValue();
   private static final int MAGIC_REWARD_OFFSET = 8;
 
   @Autowired
-  KafkaBlockSummaryPublisher blockListener;
+  KafkaEthereumListener kafkaListener;
 
   @Autowired
   BlockStore blockStore;
@@ -65,6 +58,8 @@ public class StateReplayer {
 
     Block block;
     long number = parseLong(config.getProperty("replay.from", "0"));
+
+    final long maxNumber = parseLong(config.getProperty("replay.until", "" + Long.MAX_VALUE));
 
     logger.info("Attempting to replay from number = {}", number);
 
@@ -99,43 +94,16 @@ public class StateReplayer {
         final Map<byte[], BigInteger> rewards = calculateRewards(block, executionSummaries);
         final BlockSummary blockSummary = new BlockSummary(block, rewards, receipts, executionSummaries);
 
-        final BlockRecord.Builder builder = objectMapper
-          .convert(null, BlockSummary.class, BlockRecord.Builder.class, blockSummary);
+        kafkaListener.onBlock(blockSummary);
 
-        if (block.isGenesis()) {
-          final Genesis genesis = Genesis.getInstance(config);
-
-          final Map<ByteArrayWrapper, Genesis.PremineAccount> premine = genesis.getPremine();
-          final List<PremineBalanceRecord> premineBalances = new ArrayList<>(premine.size());
-
-          for (Map.Entry<ByteArrayWrapper, Genesis.PremineAccount> entry : premine.entrySet()) {
-
-            final byte[] account = entry.getKey().getData();
-            final AccountState accountState = entry.getValue().accountState;
-
-            premineBalances.add(
-              PremineBalanceRecord
-                .newBuilder()
-                .setAddress(new Data20(account))
-                .setBalance(wrap(accountState.getBalance().toByteArray()))
-                .build()
-            );
-
-          }
-
-          builder.setPremineBalances(premineBalances);
-        }
-
-        blockListener.onBlock(builder.build());
-
-        if (number % 1000 == 0) {
+        if (number % 100 == 0) {
           logger.info("Replayed until number = {}", number);
         }
 
         number++;
       }
 
-    } while (block != null);
+    } while (block != null && number <= maxNumber);
 
     logger.info("Replay complete, last number = {}", number - 1);
 

@@ -394,7 +394,7 @@ public class NodeManager implements Consumer<DiscoveryEvent>{
                 } catch (Throwable e) {     // IllegalAccessError is expected
                     // NOTE: logback stops context right after shutdown initiated. It is problematic to see log output
                     // System out could help
-                    logger.warn("Problem during NodeManager persist in close: " + e.getMessage());
+                    logger.warn("Problem during NodeManager persist in shutdown: " + e.getMessage());
                 }
             }
         } catch (Exception e) {

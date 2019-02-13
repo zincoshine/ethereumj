@@ -131,7 +131,7 @@ public class TransactionStore extends ObjectDataSource<List<TransactionInfo>> {
     public void close() {
 //        try {
 //            logger.info("Closing TransactionStore...");
-//            super.close();
+//            super.shutdown();
 //        } catch (Exception e) {
 //            logger.warn("Problems closing TransactionStore", e);
 //        }

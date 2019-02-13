@@ -58,11 +58,11 @@ public class LevelDbDataSource implements DbSource<byte[]> {
     DbSettings settings = DbSettings.DEFAULT;
 
     // The native LevelDB insert/update/delete are normally thread-safe
-    // However close operation is not thread-safe and may lead to a native crash when
+    // However shutdown operation is not thread-safe and may lead to a native crash when
     // accessing a closed DB.
     // The leveldbJNI lib has a protection over accessing closed DB but it is not synchronized
     // This ReadWriteLock still permits concurrent execution of insert/delete/update operations
-    // however blocks them on init/close/delete operations
+    // however blocks them on init/shutdown/delete operations
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
     public LevelDbDataSource() {
@@ -301,7 +301,7 @@ public class LevelDbDataSource implements DbSource<byte[]> {
 
                 alive = false;
             } catch (IOException e) {
-                logger.error("Failed to find the db file on the close: {} ", name);
+                logger.error("Failed to find the db file on the shutdown: {} ", name);
             }
         } finally {
             resetDbLock.writeLock().unlock();

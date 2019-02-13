@@ -79,7 +79,7 @@ public class KademliaTest {
         //t.getBucketsCount() returns non empty buckets
         assertEquals(t.getBucketsCount(), 1);
 
-        //creates very close nodes
+        //creates very shutdown nodes
         for (int i = 1; i < KademliaOptions.BUCKET_SIZE; i++) {
             Node n= getNode(homeNode.getId(), i);
             t.addNode(n);

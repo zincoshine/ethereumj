@@ -77,7 +77,7 @@ public class PeerClient {
     }
 
     /**
-     *  Connects to the node and returns only upon connection close
+     *  Connects to the node and returns only upon connection shutdown
      */
     public void connect(String host, int port, String remoteId, boolean discoveryMode) {
         try {

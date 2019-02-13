@@ -971,7 +971,7 @@ public class TrieTest {
         assertEquals(BigInteger.ZERO, accountState2.getNonce());
         assertEquals(null, accountState2.getStateRoot());
 
-//        keyValueDataSource.close();
+//        keyValueDataSource.shutdown();
     }
 
 
